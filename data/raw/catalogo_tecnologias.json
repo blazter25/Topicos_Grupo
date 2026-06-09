@@ -1,0 +1,198 @@
+[
+  {
+    "tecnologia": "Python",
+    "categoria": "Lenguaje",
+    "indice_demanda": 92,
+    "emergente": false,
+    "premium": 320
+  },
+  {
+    "tecnologia": "JavaScript",
+    "categoria": "Lenguaje",
+    "indice_demanda": 88,
+    "emergente": false,
+    "premium": 260
+  },
+  {
+    "tecnologia": "Java",
+    "categoria": "Lenguaje",
+    "indice_demanda": 80,
+    "emergente": false,
+    "premium": 300
+  },
+  {
+    "tecnologia": "C#",
+    "categoria": "Lenguaje",
+    "indice_demanda": 70,
+    "emergente": false,
+    "premium": 290
+  },
+  {
+    "tecnologia": "PHP",
+    "categoria": "Lenguaje",
+    "indice_demanda": 55,
+    "emergente": false,
+    "premium": 150
+  },
+  {
+    "tecnologia": "TypeScript",
+    "categoria": "Lenguaje",
+    "indice_demanda": 78,
+    "emergente": true,
+    "premium": 300
+  },
+  {
+    "tecnologia": "Go",
+    "categoria": "Lenguaje",
+    "indice_demanda": 45,
+    "emergente": true,
+    "premium": 420
+  },
+  {
+    "tecnologia": "Rust",
+    "categoria": "Lenguaje",
+    "indice_demanda": 28,
+    "emergente": true,
+    "premium": 460
+  },
+  {
+    "tecnologia": "React",
+    "categoria": "Frontend",
+    "indice_demanda": 85,
+    "emergente": false,
+    "premium": 300
+  },
+  {
+    "tecnologia": "Angular",
+    "categoria": "Frontend",
+    "indice_demanda": 60,
+    "emergente": false,
+    "premium": 270
+  },
+  {
+    "tecnologia": "Vue",
+    "categoria": "Frontend",
+    "indice_demanda": 42,
+    "emergente": true,
+    "premium": 250
+  },
+  {
+    "tecnologia": "Node.js",
+    "categoria": "Backend",
+    "indice_demanda": 76,
+    "emergente": false,
+    "premium": 290
+  },
+  {
+    "tecnologia": ".NET",
+    "categoria": "Backend",
+    "indice_demanda": 64,
+    "emergente": false,
+    "premium": 300
+  },
+  {
+    "tecnologia": "Spring",
+    "categoria": "Backend",
+    "indice_demanda": 50,
+    "emergente": false,
+    "premium": 320
+  },
+  {
+    "tecnologia": "AWS",
+    "categoria": "Cloud",
+    "indice_demanda": 82,
+    "emergente": false,
+    "premium": 480
+  },
+  {
+    "tecnologia": "Azure",
+    "categoria": "Cloud",
+    "indice_demanda": 74,
+    "emergente": false,
+    "premium": 450
+  },
+  {
+    "tecnologia": "GCP",
+    "categoria": "Cloud",
+    "indice_demanda": 40,
+    "emergente": true,
+    "premium": 440
+  },
+  {
+    "tecnologia": "Docker",
+    "categoria": "DevOps",
+    "indice_demanda": 72,
+    "emergente": false,
+    "premium": 360
+  },
+  {
+    "tecnologia": "Kubernetes",
+    "categoria": "DevOps",
+    "indice_demanda": 48,
+    "emergente": true,
+    "premium": 520
+  },
+  {
+    "tecnologia": "Git",
+    "categoria": "DevOps",
+    "indice_demanda": 90,
+    "emergente": false,
+    "premium": 80
+  },
+  {
+    "tecnologia": "SQL",
+    "categoria": "Datos",
+    "indice_demanda": 89,
+    "emergente": false,
+    "premium": 200
+  },
+  {
+    "tecnologia": "Power BI",
+    "categoria": "Datos",
+    "indice_demanda": 66,
+    "emergente": false,
+    "premium": 220
+  },
+  {
+    "tecnologia": "Spark",
+    "categoria": "Datos",
+    "indice_demanda": 35,
+    "emergente": true,
+    "premium": 430
+  },
+  {
+    "tecnologia": "Machine Learning",
+    "categoria": "IA",
+    "indice_demanda": 58,
+    "emergente": true,
+    "premium": 500
+  },
+  {
+    "tecnologia": "LLM/IA Generativa",
+    "categoria": "IA",
+    "indice_demanda": 52,
+    "emergente": true,
+    "premium": 560
+  },
+  {
+    "tecnologia": "PostgreSQL",
+    "categoria": "Base de Datos",
+    "indice_demanda": 63,
+    "emergente": false,
+    "premium": 210
+  },
+  {
+    "tecnologia": "MongoDB",
+    "categoria": "Base de Datos",
+    "indice_demanda": 47,
+    "emergente": false,
+    "premium": 230
+  },
+  {
+    "tecnologia": "Oracle",
+    "categoria": "Base de Datos",
+    "indice_demanda": 44,
+    "emergente": false,
+    "premium": 260
+  }
+]

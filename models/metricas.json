@@ -1,0 +1,112 @@
+{
+  "regresion": {
+    "r2": 0.838,
+    "r2_base": 0.868,
+    "mae": 279.2,
+    "n_test": 258
+  },
+  "clasificacion": {
+    "accuracy": 0.733,
+    "f1_macro": 0.643,
+    "n_test": 258
+  },
+  "clustering": {
+    "k": 4,
+    "perfil": [
+      {
+        "cluster": 0,
+        "salario_promedio": 2201.1,
+        "num_habilidades": 4.9,
+        "num_habilidades_emergentes": 1.6,
+        "indice_demanda_prom": 67.6,
+        "n_ofertas": 423,
+        "segmento": "Entrada / Bajo costo"
+      },
+      {
+        "cluster": 1,
+        "salario_promedio": 3799.4,
+        "num_habilidades": 4.8,
+        "num_habilidades_emergentes": 1.2,
+        "indice_demanda_prom": 70.5,
+        "n_ofertas": 297,
+        "segmento": "Alta especialización / Premium"
+      },
+      {
+        "cluster": 2,
+        "salario_promedio": 3227.8,
+        "num_habilidades": 5.9,
+        "num_habilidades_emergentes": 3.0,
+        "indice_demanda_prom": 63.5,
+        "n_ofertas": 262,
+        "segmento": "Especialista demandado"
+      },
+      {
+        "cluster": 3,
+        "salario_promedio": 2241.2,
+        "num_habilidades": 3.9,
+        "num_habilidades_emergentes": 0.4,
+        "indice_demanda_prom": 78.4,
+        "n_ofertas": 304,
+        "segmento": "Generalista intermedio"
+      }
+    ]
+  },
+  "tendencias_emergentes": {
+    "tendencias": [
+      {
+        "tecnologia": "TypeScript",
+        "crecimiento_pp_mes": 0.938,
+        "cuota_actual_pct": 23.1,
+        "proyeccion_cuota_2m_pct": 30.7
+      },
+      {
+        "tecnologia": "Vue",
+        "crecimiento_pp_mes": 0.659,
+        "cuota_actual_pct": 15.4,
+        "proyeccion_cuota_2m_pct": 22.6
+      },
+      {
+        "tecnologia": "Go",
+        "crecimiento_pp_mes": 0.456,
+        "cuota_actual_pct": 15.4,
+        "proyeccion_cuota_2m_pct": 12.5
+      },
+      {
+        "tecnologia": "Rust",
+        "crecimiento_pp_mes": 0.417,
+        "cuota_actual_pct": 11.5,
+        "proyeccion_cuota_2m_pct": 11.4
+      },
+      {
+        "tecnologia": "Kubernetes",
+        "crecimiento_pp_mes": 0.022,
+        "cuota_actual_pct": 23.1,
+        "proyeccion_cuota_2m_pct": 21.0
+      },
+      {
+        "tecnologia": "Spark",
+        "crecimiento_pp_mes": 0.008,
+        "cuota_actual_pct": 23.1,
+        "proyeccion_cuota_2m_pct": 19.9
+      },
+      {
+        "tecnologia": "Machine Learning",
+        "crecimiento_pp_mes": -0.109,
+        "cuota_actual_pct": 7.7,
+        "proyeccion_cuota_2m_pct": 20.0
+      },
+      {
+        "tecnologia": "LLM/IA Generativa",
+        "crecimiento_pp_mes": -0.345,
+        "cuota_actual_pct": 7.7,
+        "proyeccion_cuota_2m_pct": 18.1
+      },
+      {
+        "tecnologia": "GCP",
+        "crecimiento_pp_mes": -0.393,
+        "cuota_actual_pct": 7.7,
+        "proyeccion_cuota_2m_pct": 15.2
+      }
+    ]
+  }
+}
