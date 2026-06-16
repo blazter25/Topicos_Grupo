@@ -6,8 +6,8 @@
 
 | | |
 |---|---|
-| **Estudiante** | Angel Martínez |
-| **Cédula** | 8-893-602 |
+| **Estudiante** | Angel Martínez | Anllelina Varcacia | David Ortega | Carlos Jaen | Gabriel Rodriguez
+| **Cédula** 
 
 ---
 
