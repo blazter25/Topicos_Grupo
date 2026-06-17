@@ -18,16 +18,17 @@ El pipeline es idempotente y documentado paso a paso.
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
+import json               # Lectura del catálogo de tecnologías (JSON).
+from pathlib import Path  # Rutas portables.
 
-import numpy as np
-import pandas as pd
+import numpy as np        # Operaciones numéricas (NaN, medias, etc.).
+import pandas as pd       # Manipulación de tablas de datos.
 
+# Rutas de entrada (datos crudos) y salida (datos procesados).
 RAIZ = Path(__file__).resolve().parents[1]
 DIR_RAW = RAIZ / "data" / "raw"
 DIR_PROC = RAIZ / "data" / "processed"
-DIR_PROC.mkdir(parents=True, exist_ok=True)
+DIR_PROC.mkdir(parents=True, exist_ok=True)   # Se crea la carpeta si no existe.
 
 
 # ---------------------------------------------------------------------------
@@ -39,6 +40,7 @@ def ingestar_ofertas() -> pd.DataFrame:
     if not ruta.exists():
         raise FileNotFoundError(
             f"No existe {ruta}. Ejecute primero src/generar_datos.py")
+    # Los salarios se leen como texto (object) porque pueden venir vacíos.
     df = pd.read_csv(ruta, dtype={"salario_min": "object", "salario_max": "object"})
     print(f"   [ingesta] Fuente 1 (CSV) ofertas: {len(df)} filas")
     return df
@@ -50,6 +52,7 @@ def ingestar_catalogo() -> pd.DataFrame:
     if not ruta.exists():
         raise FileNotFoundError(
             f"No existe {ruta}. Ejecute primero src/generar_datos.py")
+    # Se lee el JSON y se convierte la lista de tecnologías en un DataFrame.
     with open(ruta, "r", encoding="utf-8") as f:
         data = json.load(f)
     df = pd.DataFrame(data)
@@ -61,20 +64,21 @@ def ingestar_catalogo() -> pd.DataFrame:
 # 2. LIMPIEZA
 # ---------------------------------------------------------------------------
 def limpiar_ofertas(df: pd.DataFrame) -> pd.DataFrame:
+    """Elimina duplicados, corrige tipos y normaliza las categóricas."""
     df = df.copy()
-    filas_ini = len(df)
+    filas_ini = len(df)   # Se guarda el conteo inicial para reportar al final.
 
-    # 2.1 Eliminar duplicados exactos por id + fecha
+    # 2.1 Eliminar duplicados exactos por id + fecha (avisos re-publicados).
     df = df.drop_duplicates(subset=["id_oferta", "fecha_publicacion"]).copy()
 
-    # 2.2 Tipos: fechas
+    # 2.2 Tipos: convertir la fecha a datetime y descartar fechas inválidas.
     df["fecha_publicacion"] = pd.to_datetime(df["fecha_publicacion"], errors="coerce")
     df = df.dropna(subset=["fecha_publicacion"]).copy()
 
-    # 2.3 Faltantes en texto
+    # 2.3 Faltantes en texto: empresas vacías pasan a "Confidencial".
     df["empresa"] = df["empresa"].fillna("Confidencial").replace("", "Confidencial")
 
-    # 2.4 Normalización de categóricas
+    # 2.4 Normalización de categóricas (espacios y mayúsculas/minúsculas).
     df["modalidad"] = df["modalidad"].str.strip().str.title()
     df["nivel"] = df["nivel"].str.strip().str.title()
     df["provincia"] = df["provincia"].str.strip()
@@ -89,57 +93,64 @@ def limpiar_ofertas(df: pd.DataFrame) -> pd.DataFrame:
 # 3. TRANSFORMACIÓN
 # ---------------------------------------------------------------------------
 def _a_numero(serie: pd.Series) -> pd.Series:
+    """Convierte una serie de texto a numérica; los vacíos pasan a NaN."""
     return pd.to_numeric(serie.replace("", np.nan), errors="coerce")
 
 
 def transformar(df: pd.DataFrame, catalogo: pd.DataFrame) -> pd.DataFrame:
+    """Parsea salarios, enriquece habilidades y crea variables derivadas."""
     df = df.copy()
 
-    # 3.1 Parseo de salarios
+    # 3.1 Parseo de salarios (texto -> número).
     df["salario_min"] = _a_numero(df["salario_min"])
     df["salario_max"] = _a_numero(df["salario_max"])
 
-    # Imputación: si falta uno de los dos, usar el otro; salario_promedio
+    # Imputación cruzada: si falta uno de los dos límites, se usa el otro.
     df["salario_min"] = df["salario_min"].fillna(df["salario_max"])
     df["salario_max"] = df["salario_max"].fillna(df["salario_min"])
+    # Salario promedio = media de mínimo y máximo.
     df["salario_promedio"] = df[["salario_min", "salario_max"]].mean(axis=1)
 
-    # Si ambos faltan, imputar por mediana del nivel
+    # Si ambos límites faltaban, se imputa con la mediana del nivel.
     mediana_nivel = df.groupby("nivel")["salario_promedio"].transform("median")
     df["salario_promedio"] = df["salario_promedio"].fillna(mediana_nivel)
 
-    # 3.2 Diccionarios del catálogo (Fuente 2) para enriquecer
+    # 3.2 Diccionarios del catálogo (Fuente 2) para enriquecer cada habilidad.
     cat_demanda = dict(zip(catalogo["tecnologia"], catalogo["indice_demanda"]))
     cat_categoria = dict(zip(catalogo["tecnologia"], catalogo["categoria"]))
     cat_emergente = dict(zip(catalogo["tecnologia"], catalogo["emergente"]))
 
-    # 3.3 Procesar lista de habilidades por oferta
+    # 3.3 Procesar la lista de habilidades de cada oferta (texto -> lista).
     df["lista_habilidades"] = (
         df["habilidades"].fillna("").apply(
             lambda x: [s.strip() for s in x.split(",") if s.strip()])
     )
 
-    df["num_habilidades"] = df["lista_habilidades"].apply(len)
+    # Variables derivadas (feature engineering) a partir de las habilidades:
+    df["num_habilidades"] = df["lista_habilidades"].apply(len)   # cuántas pide.
     df["num_habilidades_emergentes"] = df["lista_habilidades"].apply(
         lambda ls: sum(1 for s in ls if cat_emergente.get(s, False)))
+    # Índice de demanda promedio de las habilidades de la oferta.
     df["indice_demanda_prom"] = df["lista_habilidades"].apply(
         lambda ls: np.mean([cat_demanda.get(s, 50) for s in ls]) if ls else 50.0)
 
     def categoria_principal(ls):
+        """Categoría más frecuente entre las habilidades de la oferta."""
         cats = [cat_categoria.get(s) for s in ls if cat_categoria.get(s)]
         if not cats:
             return "Otros"
-        return pd.Series(cats).mode().iat[0]
+        return pd.Series(cats).mode().iat[0]   # moda = categoría dominante.
 
     df["categoria_principal"] = df["lista_habilidades"].apply(categoria_principal)
+    # Bandera binaria: la oferta pide al menos una tecnología emergente.
     df["tiene_emergente"] = (df["num_habilidades_emergentes"] > 0).astype(int)
 
-    # 3.4 Variables temporales
+    # 3.4 Variables temporales para los análisis por mes/año.
     df["anio"] = df["fecha_publicacion"].dt.year
     df["mes"] = df["fecha_publicacion"].dt.to_period("M").astype(str)
     df["anio_mes"] = df["fecha_publicacion"].dt.to_period("M").dt.to_timestamp()
 
-    # 3.5 Filtro de salarios atípicos (outliers extremos)
+    # 3.5 Filtro de salarios atípicos (se recorta el 0.5% en cada extremo).
     q_low, q_high = df["salario_promedio"].quantile([0.005, 0.995])
     df = df[df["salario_promedio"].between(q_low, q_high)].copy()
 
@@ -151,10 +162,13 @@ def transformar(df: pd.DataFrame, catalogo: pd.DataFrame) -> pd.DataFrame:
 # Tabla auxiliar: ofertas explotadas por habilidad (formato largo)
 # ---------------------------------------------------------------------------
 def construir_tabla_habilidades(df: pd.DataFrame, catalogo: pd.DataFrame) -> pd.DataFrame:
+    """Crea una tabla con una fila por par (oferta, tecnología)."""
+    # explode() expande la lista de habilidades en filas individuales.
     largo = df[["id_oferta", "fecha_publicacion", "anio_mes", "mes",
                 "nivel", "salario_promedio", "lista_habilidades"]].explode(
         "lista_habilidades").rename(columns={"lista_habilidades": "tecnologia"})
     largo = largo.dropna(subset=["tecnologia"])
+    # Se cruza con el catálogo para añadir categoría, demanda y emergente.
     largo = largo.merge(catalogo, on="tecnologia", how="left")
     return largo
 
@@ -163,6 +177,7 @@ def construir_tabla_habilidades(df: pd.DataFrame, catalogo: pd.DataFrame) -> pd.
 # Orquestación
 # ---------------------------------------------------------------------------
 def ejecutar_pipeline() -> dict:
+    """Ejecuta las cuatro etapas del ETL y guarda los datos procesados."""
     print(">> [1/4] INGESTA")
     ofertas = ingestar_ofertas()
     catalogo = ingestar_catalogo()
@@ -175,7 +190,7 @@ def ejecutar_pipeline() -> dict:
     tabla_hab = construir_tabla_habilidades(df, catalogo)
 
     print(">> [4/4] CARGA")
-    # Guardamos sin la columna de lista (no serializa bien en CSV plano)
+    # Se quita la columna de listas (no se serializa bien en un CSV plano).
     df_out = df.drop(columns=["lista_habilidades"])
     ruta_proc = DIR_PROC / "ofertas_procesadas.csv"
     ruta_hab = DIR_PROC / "habilidades_largo.csv"
@@ -187,6 +202,7 @@ def ejecutar_pipeline() -> dict:
     return {"ofertas": df, "habilidades": tabla_hab, "catalogo": catalogo}
 
 
+# Punto de entrada: permite ejecutar solo el pipeline de forma independiente.
 if __name__ == "__main__":
     ejecutar_pipeline()
     print(">> Pipeline finalizado correctamente.")

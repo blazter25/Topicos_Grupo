@@ -20,26 +20,29 @@ las proporciones reales del mercado IT panameño.
 
 from __future__ import annotations
 
-import json
-import random
-from datetime import datetime, timedelta
-from pathlib import Path
+import json                              # Para escribir el catálogo en JSON.
+import random                            # Generación de valores aleatorios.
+from datetime import datetime, timedelta # Manejo de fechas de publicación.
+from pathlib import Path                 # Rutas portables.
 
-import numpy as np
-import pandas as pd
+import numpy as np   # Ruido estadístico y distribuciones (normal, beta...).
+import pandas as pd  # Construcción del DataFrame de ofertas.
 
-# Reproducibilidad
+# Semilla fija: garantiza que cada ejecución produzca los MISMOS datos
+# (reproducibilidad, requisito clave en proyectos de datos).
 SEMILLA = 42
 random.seed(SEMILLA)
 np.random.seed(SEMILLA)
 
+# Carpeta de salida de los datos crudos (se crea si no existe).
 RAIZ = Path(__file__).resolve().parents[1]
 DIR_RAW = RAIZ / "data" / "raw"
 DIR_RAW.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Catálogo de tecnologías (Fuente 2)
-# Cada tecnología tiene categoría, índice de demanda (0-100) y si es emergente
+# Cada tecnología tiene categoría, índice de demanda (0-100) y si es emergente.
+# 'premium' = sobreprecio salarial aproximado que aporta dominar esa skill.
 # ---------------------------------------------------------------------------
 CATALOGO = {
     # Lenguajes
@@ -79,6 +82,7 @@ CATALOGO = {
     "Oracle":      {"categoria": "Base de Datos", "indice_demanda": 44, "emergente": False, "premium": 260},
 }
 
+# Mapa de rol -> conjunto de tecnologías típicas de ese puesto.
 CATEGORIA_POR_ROL = {
     "Desarrollador Frontend":   ["JavaScript", "TypeScript", "React", "Angular", "Vue", "Git"],
     "Desarrollador Backend":    ["Python", "Java", "C#", "Node.js", ".NET", "Spring", "SQL", "Git"],
@@ -92,6 +96,7 @@ CATEGORIA_POR_ROL = {
     "Ingeniero de IA/ML":       ["Python", "Machine Learning", "LLM/IA Generativa", "AWS", "Spark"],
 }
 
+# Catálogos de apoyo para dar realismo a las ofertas generadas.
 EMPRESAS = [
     "Copa Airlines", "Banco General", "Banistmo", "Cable & Wireless", "Dell Panamá",
     "Globant", "TechMakers", "MultiBank", "Caja de Ahorros", "Telered",
@@ -101,17 +106,20 @@ EMPRESAS = [
 
 FUENTES = ["Konzerta", "encuentra24", "LinkedIn", "Computrabajo"]
 PROVINCIAS = ["Panamá", "Panamá Oeste", "Colón", "Chiriquí", "Coclé", "Herrera", "Los Santos", "Veraguas"]
+# Pesos de provincia: reflejan la concentración real de empleo en la capital.
 PESOS_PROVINCIA = [0.58, 0.12, 0.08, 0.09, 0.04, 0.03, 0.03, 0.03]
 MODALIDADES = ["Presencial", "Híbrido", "Remoto"]
 NIVELES = ["Junior", "Semi Senior", "Senior", "Lead"]
 CONTRATOS = ["Permanente", "Temporal", "Por Proyecto", "Freelance"]
 
-# Salario base mensual (USD/B.) por nivel - referencia mercado IT Panamá
+# Salario base mensual (USD/B.) por nivel - referencia mercado IT Panamá.
 SALARIO_BASE = {"Junior": 900, "Semi Senior": 1500, "Senior": 2400, "Lead": 3200}
+# Factor multiplicador del salario según la modalidad (remoto paga más).
 FACTOR_MODALIDAD = {"Presencial": 1.0, "Híbrido": 1.07, "Remoto": 1.15}
 
 
 def _texto_descripcion(rol: str, nivel: str, skills: list[str]) -> str:
+    """Arma un texto de descripción genérico pero realista para la oferta."""
     return (
         f"Buscamos {rol} nivel {nivel} para integrarse a nuestro equipo. "
         f"Experiencia comprobable en {', '.join(skills[:4])}. "
@@ -121,11 +129,13 @@ def _texto_descripcion(rol: str, nivel: str, skills: list[str]) -> str:
 
 def generar_ofertas(n: int = 1300) -> pd.DataFrame:
     """Genera n ofertas de empleo IT con dispersión temporal de 18 meses."""
+    # Ventana temporal: 540 días (~18 meses) hasta el 30/04/2026.
     fecha_fin = datetime(2026, 4, 30)
     fecha_ini = fecha_fin - timedelta(days=540)
     registros = []
 
     for i in range(1, n + 1):
+        # Atributos categóricos aleatorios (con pesos realistas).
         rol = random.choice(list(CATEGORIA_POR_ROL.keys()))
         nivel = random.choices(NIVELES, weights=[0.34, 0.30, 0.26, 0.10])[0]
         modalidad = random.choices(MODALIDADES, weights=[0.45, 0.33, 0.22])[0]
@@ -135,7 +145,7 @@ def generar_ofertas(n: int = 1300) -> pd.DataFrame:
         # por lo que i/n aproxima el avance del tiempo (0 = pasado, 1 = reciente)
         sesgo = i / n
 
-        # Selección de habilidades del rol (entre 3 y 6)
+        # Selección de habilidades del rol (entre 3 y 6).
         pool = CATEGORIA_POR_ROL[rol]
         k = min(len(pool), random.randint(3, 6))
         skills = random.sample(pool, k)
@@ -148,38 +158,41 @@ def generar_ofertas(n: int = 1300) -> pd.DataFrame:
             skills.append(random.choice(emergentes))
         if random.random() < prob_emergente * 0.5:
             skills.append(random.choice(emergentes))
-        skills = sorted(set(skills))
+        skills = sorted(set(skills))   # Sin duplicados y ordenadas.
 
         # ----- Salario simulado de forma realista -----
         base = SALARIO_BASE[nivel]
+        # El sobreprecio de las skills suma según el catálogo (premium).
         premium_skills = sum(CATALOGO[s]["premium"] for s in skills)
         sal_centro = (base + 0.55 * premium_skills) * FACTOR_MODALIDAD[modalidad]
-        # Sesgo geográfico (capital paga más)
+        # Sesgo geográfico (la capital paga más).
         if provincia in ("Panamá", "Panamá Oeste"):
             sal_centro *= 1.06
         else:
             sal_centro *= 0.93
-        # Ruido de mercado
+        # Ruido de mercado (variabilidad aleatoria del ±8%).
         sal_centro *= np.random.normal(1.0, 0.08)
-        sal_centro = max(750, sal_centro)
+        sal_centro = max(750, sal_centro)   # Piso salarial mínimo.
 
+        # A partir del centro se arma un rango min-max redondeado a 50.
         rango = sal_centro * np.random.uniform(0.10, 0.22)
         salario_min = round((sal_centro - rango) / 50) * 50
         salario_max = round((sal_centro + rango) / 50) * 50
 
-        # Tendencia temporal: las ofertas se concentran más en meses recientes
+        # Tendencia temporal: las ofertas se concentran más en meses recientes.
         dias = int(np.clip(np.random.beta(1.6, 1.0) * 540 * (0.4 + 0.6 * sesgo), 0, 540))
         fecha = fecha_ini + timedelta(days=dias)
 
-        # Datos faltantes intencionales para ejercitar el preprocesamiento
+        # Datos faltantes intencionales para ejercitar el preprocesamiento.
         if random.random() < 0.12:
-            salario_min = ""
+            salario_min = ""        # ~12% de ofertas sin salario mínimo.
         if random.random() < 0.07:
-            salario_max = ""
+            salario_max = ""        # ~7% sin salario máximo.
         empresa = random.choice(EMPRESAS)
         if random.random() < 0.05:
-            empresa = ""  # ofertas confidenciales
+            empresa = ""            # ~5% de ofertas confidenciales.
 
+        # Registro final de la oferta como diccionario.
         registros.append({
             "id_oferta": f"OF-{i:05d}",
             "titulo": rol,
@@ -198,13 +211,14 @@ def generar_ofertas(n: int = 1300) -> pd.DataFrame:
         })
 
     df = pd.DataFrame(registros)
-    # Duplicados artificiales (mismo aviso re-publicado) para limpiar luego
+    # Duplicados artificiales (mismo aviso re-publicado) para limpiar luego.
     dups = df.sample(frac=0.03, random_state=SEMILLA).copy()
     df = pd.concat([df, dups], ignore_index=True)
     return df
 
 
 def main() -> None:
+    """Genera y guarda en disco las dos fuentes crudas del proyecto."""
     print(">> Generando Fuente 1: ofertas de empleo IT (simulación de scraping)...")
     df = generar_ofertas()
     ruta_csv = DIR_RAW / "ofertas_empleo_it.csv"
@@ -213,6 +227,7 @@ def main() -> None:
 
     print(">> Generando Fuente 2: catálogo de tecnologías (JSON)...")
     ruta_json = DIR_RAW / "catalogo_tecnologias.json"
+    # Se transforma el diccionario CATALOGO en una lista de objetos JSON.
     catalogo_lista = [
         {"tecnologia": k, **v} for k, v in CATALOGO.items()
     ]
@@ -222,5 +237,6 @@ def main() -> None:
     print(">> Fuentes crudas generadas correctamente.")
 
 
+# Punto de entrada: permite generar las fuentes de forma independiente.
 if __name__ == "__main__":
     main()
